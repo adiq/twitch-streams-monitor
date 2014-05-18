@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>G5 Monitor - adiq.eu</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
+          rel="stylesheet">
+  </head>
+  <body>
+    <style>
+    .name {
+      font-size: 28px;
+      text-align: center;
+    }
+    .info img {
+      margin-left: -10px;
+      -webkit-border-radius:5px;
+      -moz-border-radius:5px;
+      border-radius:5px;
+    }
+    .count {
+      float: right;
+      position: relative;
+      top: -70px;
+      font-size: 14px;
+    }
+    .status {
+      font-size: 16px;
+      float: left;
+      position: relative;
+      top: -65px;
+      left: -25px;
+    }
+    .info a {
+      color: black;
+      font-size: 16px;
+    }
+    .info {
+      position: relative;
+      top: -10px;
+    }
+    .channel {
+      text-align: center;
+    }
+    .game {
+      position: relative;
+      top: 10px;
+    }
+    .header {
+      text-align: center;
+    }
+    @-webkit-keyframes spin2 {
+        from { -webkit-transform: rotate(0deg);}
+        to { -webkit-transform: rotate(360deg);}
+    }
+
+    @keyframes spin {
+        from { transform: scale(1) rotate(0deg);}
+        to { transform: scale(1) rotate(360deg);}
+    }
+    .icon-refresh-animate {
+        -animation: spin .7s infinite linear;
+        -webkit-animation: spin2 .7s infinite linear;
+        display: inline-block !important;
+    }
+    .icon-refresh {
+        display: none;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+    </style>
+    <div class="container">
+      <div class="header">
+        <h2>G5 MONITOR</h2>
+        <small>Automatyczne odświeżanie jest aktywne ;)</small>
+      </div>
+      <hr/>
+
+       <div class="row">
+            <div class="col-lg-12">
+                            {% for name,channel in test.items() %}
+                            <div class="col-lg-4">
+                                <div id="{{ channel }}" class="channel well well-lg">
+                                  <div class="name">{{ name }}</div> <span class="status label label-default">checking...<span class="glyphicon glyphicon-refresh icon-refresh icon-refresh-animate"></span></span>
+                                  <div class="count badge"></div>
+                                  <div class="info"></div>
+                                  <div class="game label label-default"></div>
+                                </div>
+                              </div>
+                            {% endfor %}
+
+            </div>
+        </div>
+
+    </div>
+    <script type=text/javascript>
+
+        
+        function checkLive() {
+            if(typeof lastLive === 'undefined') { lastLive = 0;  }
+            var onlineNow = $(".online").length;
+
+            document.title = '('+onlineNow+' live) G5 Monitor - adiq.eu';            
+
+            if(onlineNow>lastLive) {
+                $("#sound")[0].play();
+            }
+            
+            lastLive = onlineNow;
+        }
+    
+        function refresh() {
+        
+            $('.icon-refresh').each(function() {
+                item = $(this);
+                item.addClass("icon-refresh-animate");
+            });
+
+          var reqs = [];
+          $('.channel').each(function() {
+            item = $(this).attr("id");
+            $.ajax({
+                 url: '/_get_status',
+                 type: 'post',
+                 data: 'channel='+item,
+                 dataType: 'json',
+                 async: true,
+                 success: function(data) {
+                   if(data['success']) {
+                     if (data['online']) {
+                       $('#'+data['channel']+' .status').html('ONLINE <span class="online glyphicon glyphicon-refresh icon-refresh"></span>');
+                       $('#'+data['channel']+' .count').html(data['viewers']+' oglądających');
+                       $('#'+data['channel']+' .info').html('<a href="'+data['url']+'"><b><img src="'+data['preview']+'" alt="preview" /><br/>'+data['title']+'</b></a>');
+                       $('#'+data['channel']+' .game').html(data['game']);
+
+                       $('#'+data['channel']+' .status').removeClass("label-default");
+                       $('#'+data['channel']+' .status').removeClass("label-danger");
+                       $('#'+data['channel']+' .status').addClass("label-success");
+                     } else {
+                       $('#'+data['channel']+' .status').html('OFFLINE <span class="offline glyphicon glyphicon-refresh icon-refresh"></span>');
+                       $('#'+data['channel']+' .count').html('');
+                       $('#'+data['channel']+' .info').html('');
+                       $('#'+data['channel']+' .game').html('');
+
+                       $('#'+data['channel']+' .status').removeClass("label-default");
+                       $('#'+data['channel']+' .status').removeClass("label-sucess");
+                       $('#'+data['channel']+' .status').addClass("label-danger");
+                     }
+                   }
+
+                 }
+            });
+          });
+
+          window.setTimeout('refresh()', 35000);
+          window.setTimeout('checkLive()', 10000);
+        }
+
+        window.setTimeout('refresh()', 850);
+    </script>
+    <audio id="sound">
+        <source src="https://dl.dropboxusercontent.com/s/64g467p6wenk38f/Weight.m4a" type="audio/mpeg" />
+        <source src="https://dl.dropboxusercontent.com/s/ep75i393fxch30d/Weight.ogg" type="audio/ogg" />
+    </audio>
+  </body>
+</html>
